@@ -1,7 +1,9 @@
-let quotes = JSON.parse(localStorage.getItem('quotes')) || [
-  { text: "Be yourself; everyone else is already taken.", category: "Motivation" },
-  { text: "Two things are infinite: the universe and human stupidity.", category: "Humor" }
+let quotes = [
+  { text: "The best way to predict the future is to invent it.", category: "Motivation" },
+  { text: "Life is what happens when you're busy making other plans.", category: "Life" },
+  { text: "Do one thing every day that scares you.", category: "Courage" }
 ];
+
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("newQuote").addEventListener("click", showRandomQuote);
@@ -96,3 +98,10 @@ function syncWithServer() {
       alert("Data synced with server.");
     });
 }
+function displayRandomQuote() {
+  const quoteDisplay = document.getElementById("quoteDisplay");
+  const randomIndex = Math.floor(Math.random() * quotes.length);
+  const quote = quotes[randomIndex];
+  quoteDisplay.innerHTML = `<p>${quote.text}</p><em>(${quote.category})</em>`;
+}
+document.getElementById("newQuote").addEventListener("click", displayRandomQuote);
