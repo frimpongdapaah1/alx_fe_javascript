@@ -2,7 +2,7 @@ const API_URL = 'https://jsonplaceholder.typicode.com/posts';
 const LOCAL_STORAGE_KEY = 'quotes';
 let quotes = [];
 
-// Load from localStorage
+// Load existing quotes
 function loadQuotes() {
   const storedQuotes = localStorage.getItem(LOCAL_STORAGE_KEY);
   quotes = storedQuotes ? JSON.parse(storedQuotes) : [
@@ -16,13 +16,13 @@ function saveQuotes() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(quotes));
 }
 
-// Create DOM elements
+// Show a random quote
 function showRandomQuote() {
   const quoteDisplay = document.getElementById('quoteDisplay');
   quoteDisplay.innerHTML = '';
 
   if (quotes.length === 0) {
-    quoteDisplay.innerHTML = "<p>No quotes available. Please add one.</p>";
+    quoteDisplay.innerHTML = "<p>No quotes available.</p>";
     return;
   }
 
@@ -35,6 +35,38 @@ function showRandomQuote() {
 
   quoteDisplay.appendChild(block);
   quoteDisplay.appendChild(cat);
+}
+
+// ✅ 1. Use async/await for fetching
+async function fetchQuotesFromServer() {
+  try {
+    const response = await fetch(API_URL);
+    const data = await response.json();
+    return data.map(post => ({
+      text: post.title,
+      category: "Fetched"
+    }));
+  } catch (error) {
+    console.error("Failed to fetch from server:", error);
+    return [];
+  }
+}
+
+// ✅ 2. Use async/await for posting
+async function postQuoteToServer(quote) {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify(quote),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    });
+    const result = await response.json();
+    console.log("Posted to server:", result);
+  } catch (error) {
+    console.error("Failed to post quote:", error);
+  }
 }
 
 // Add quote
@@ -52,13 +84,13 @@ function addQuote() {
   saveQuotes();
   showRandomQuote();
 
-  // Simulate posting to server
+  // Post to server
   postQuoteToServer(newQuote);
 
-  alert("Quote added and synced.");
+  alert("Quote added and synced to server.");
 }
 
-// Create input form
+// Create form
 function createAddQuoteForm() {
   const form = document.createElement('div');
   form.innerHTML = `
@@ -71,66 +103,37 @@ function createAddQuoteForm() {
   document.getElementById('addQuoteBtn').addEventListener('click', addQuote);
 }
 
-// ✅ 1. Fetch from server
-function fetchQuotesFromServer() {
-  return fetch(API_URL)
-    .then(response => response.json())
-    .then(data => {
-      // Simulate received quote format
-      return data.map(post => ({
-        text: post.title,
-        category: "Fetched"
-      }));
-    });
-}
+// ✅ 3–6. Sync quotes and update localStorage with conflict resolution + UI
+async function syncQuotes() {
+  const serverQuotes = await fetchQuotesFromServer();
+  let newCount = 0;
 
-// ✅ 2. Post to server (simulation)
-function postQuoteToServer(quote) {
-  fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify(quote),
-    headers: {
-      "Content-type": "application/json; charset=UTF-8"
+  for (let serverQuote of serverQuotes) {
+    const exists = quotes.some(localQuote => localQuote.text === serverQuote.text);
+    if (!exists) {
+      quotes.push(serverQuote);
+      newCount++;
     }
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log("Posted to server:", data);
-    });
+  }
+
+  if (newCount > 0) {
+    saveQuotes();
+    showRandomQuote();
+    alert(`${newCount} new quote(s) synced from server.`);
+  } else {
+    console.log("No new quotes to sync.");
+  }
 }
 
-// ✅ 3. Sync quotes from server every 30s
-function syncQuotes() {
-  fetchQuotesFromServer().then(serverQuotes => {
-    let added = 0;
-
-    serverQuotes.forEach(sq => {
-      const exists = quotes.some(lq => lq.text === sq.text);
-      if (!exists) {
-        quotes.push(sq);
-        added++;
-      }
-    });
-
-    if (added > 0) {
-      saveQuotes();
-      showRandomQuote();
-      alert(`Synced ${added} new quote(s) from server.`);
-    } else {
-      console.log("No new quotes from server.");
-    }
-  });
-}
-
-// Init
+// Initialize
 function init() {
   loadQuotes();
   createAddQuoteForm();
   document.getElementById('newQuote').addEventListener('click', showRandomQuote);
   showRandomQuote();
 
-  // ✅ Periodic sync
-  setInterval(syncQuotes, 30000); // 30 seconds
+  // ✅ Periodic syncing
+  setInterval(syncQuotes, 30000); // every 30 seconds
 }
 
 document.addEventListener('DOMContentLoaded', init);
