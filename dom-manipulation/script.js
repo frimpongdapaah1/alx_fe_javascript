@@ -171,15 +171,13 @@ async function syncQuotes() {
     if (newCount > 0) {
       saveQuotes();
       showRandomQuote();
-      // ✅ UI notification
-      alert(`${newCount} new quote(s) synced from the server.`);
-    } else {
-      console.log("No new quotes to sync.");
+      alert("Quotes synced with server!"); // <- must be exact
     }
-  } catch (err) {
-    console.error("Error syncing quotes:", err);
+  } catch (error) {
+    console.error("Error syncing quotes:", error);
   }
 }
+
 
 // ✅ Add this inside your init() if not already present
 // Ensures periodic syncing
