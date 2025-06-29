@@ -137,3 +137,50 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+// ✅ Fix 1: Capitalize "Content-Type" in headers
+async function postQuoteToServer(quote) {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify(quote),
+      headers: {
+        "Content-Type": "application/json; charset=UTF-8"  // 👈 Fix
+      }
+    });
+    const result = await response.json();
+    console.log("Posted to server:", result);
+  } catch (error) {
+    console.error("Failed to post quote:", error);
+  }
+}
+
+// ✅ Fix 2–5: syncQuotes with periodic check, conflict resolution, and UI alert
+async function syncQuotes() {
+  try {
+    const serverQuotes = await fetchQuotesFromServer();
+    let newCount = 0;
+
+    for (let serverQuote of serverQuotes) {
+      const exists = quotes.some(local => local.text === serverQuote.text);
+      if (!exists) {
+        quotes.push(serverQuote);
+        newCount++;
+      }
+    }
+
+    if (newCount > 0) {
+      saveQuotes();
+      showRandomQuote();
+      // ✅ UI notification
+      alert(`${newCount} new quote(s) synced from the server.`);
+    } else {
+      console.log("No new quotes to sync.");
+    }
+  } catch (err) {
+    console.error("Error syncing quotes:", err);
+  }
+}
+
+// ✅ Add this inside your init() if not already present
+// Ensures periodic syncing
+setInterval(syncQuotes, 30000); // Every 30 seconds
